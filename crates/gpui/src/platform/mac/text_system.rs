@@ -183,16 +183,8 @@ impl PlatformTextSystem for MacTextSystem {
         self.0.read().rasterize_glyph(glyph_id, raster_bounds)
     }
 
-    fn layout_line(
-        &self,
-        text: &str,
-        font_size: Pixels,
-        tracking: Pixels,
-        font_runs: &[FontRun],
-    ) -> LineLayout {
-        self.0
-            .write()
-            .layout_line(text, font_size, tracking, font_runs)
+    fn layout_line(&self, text: &str, font_size: Pixels, font_runs: &[FontRun]) -> LineLayout {
+        self.0.write().layout_line(text, font_size, font_runs)
     }
 }
 
@@ -439,24 +431,20 @@ impl MacTextSystemState {
         }
     }
 
-    fn layout_line(
-        &mut self,
-        text: &str,
-        font_size: Pixels,
-        tracking: Pixels,
-        font_runs: &[FontRun],
-    ) -> LineLayout {
+    fn layout_line(&mut self, text: &str, font_size: Pixels, font_runs: &[FontRun]) -> LineLayout {
         // Construct the attributed string, converting UTF8 ranges to UTF16 ranges.
         let mut string = CFMutableAttributedString::new();
         {
             string.replace_str(&CFString::new(text), CFRange::init(0, 0));
             let utf16_line_len = string.char_len() as usize;
 
+            /*
             let entire_range = CFRange::init(0, utf16_line_len as isize);
             let tracking = CFNumber::from(tracking.to_f64());
             unsafe {
                 string.set_attribute(entire_range, kCTTrackingAttributeName, &tracking);
             }
+            */
 
             let mut ix_converter = StringIndexConverter::new(text);
             for run in font_runs {
@@ -474,6 +462,7 @@ impl MacTextSystemState {
                     CFRange::init(utf16_start as isize, (utf16_end - utf16_start) as isize);
 
                 let font: &FontKitFont = &self.fonts[run.font_id.0];
+                let tracking = CFNumber::from(run.letter_spacing.to_px(font_size).0);
 
                 unsafe {
                     string.set_attribute(
@@ -481,6 +470,7 @@ impl MacTextSystemState {
                         kCTFontAttributeName,
                         &font.native_font().clone_with_font_size(font_size.into()),
                     );
+                    string.set_attribute(cf_range, kCTTrackingAttributeName, &tracking);
                 }
 
                 if utf16_end == utf16_line_len {
@@ -699,7 +689,7 @@ mod lenient_font_attributes {
 
 #[cfg(test)]
 mod tests {
-    use crate::{FontRun, GlyphId, MacTextSystem, PlatformTextSystem, font, px};
+    use crate::{FontRun, GlyphId, LetterSpacing, MacTextSystem, PlatformTextSystem, font, px};
 
     #[test]
     fn test_layout_line_bom_char() {
@@ -708,16 +698,17 @@ mod tests {
         let line = "\u{feff}";
         let mut style = FontRun {
             font_id,
+            letter_spacing: LetterSpacing::default(),
             len: line.len(),
         };
 
-        let layout = fonts.layout_line(line, px(16.), px(0.), &[style]);
+        let layout = fonts.layout_line(line, px(16.), &[style]);
         assert_eq!(layout.len, line.len());
         assert!(layout.runs.is_empty());
 
         let line = "a\u{feff}b";
         style.len = line.len();
-        let layout = fonts.layout_line(line, px(16.), px(0.), &[style]);
+        let layout = fonts.layout_line(line, px(16.), &[style]);
         assert_eq!(layout.len, line.len());
         assert_eq!(layout.runs.len(), 1);
         assert_eq!(layout.runs[0].glyphs.len(), 2);

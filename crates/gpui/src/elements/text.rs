@@ -295,7 +295,6 @@ impl TextLayout {
     ) -> LayoutId {
         let text_style = window.text_style();
         let font_size = text_style.font_size.to_pixels(window.rem_size());
-        let tracking = text_style.tracking.to_pixels(window.rem_size());
         let line_height = text_style
             .line_height
             .to_pixels(font_size.into(), window.rem_size());
@@ -356,7 +355,6 @@ impl TextLayout {
                     .shape_text(
                         text,
                         font_size,
-                        tracking,
                         &runs,
                         wrap_width,            // Wrap if we know the width.
                         text_style.line_clamp, // Limit the number of lines if line_clamp is set.

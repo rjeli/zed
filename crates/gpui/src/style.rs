@@ -7,7 +7,7 @@ use std::{
 use crate::{
     AbsoluteLength, App, Background, BackgroundTag, BorderStyle, Bounds, ContentMask, Corners,
     CornersRefinement, CursorStyle, DefiniteLength, DevicePixels, Edges, EdgesRefinement, Font,
-    FontFallbacks, FontFeatures, FontStyle, FontWeight, Hsla, Length, Pixels, Point,
+    FontFallbacks, FontFeatures, FontStyle, FontWeight, Hsla, Length, LetterSpacing, Pixels, Point,
     PointRefinement, Rgba, SharedString, Size, SizeRefinement, Styled, TextRun, Window, black, phi,
     point, quad, rems, size,
 };
@@ -363,6 +363,9 @@ pub struct TextStyle {
     /// The font style, e.g. italic
     pub font_style: FontStyle,
 
+    /// The letter spacing to use, in ems.
+    pub letter_spacing: LetterSpacing,
+
     /// The background color of the text
     pub background_color: Option<Hsla>,
 
@@ -404,6 +407,7 @@ impl Default for TextStyle {
             line_height: phi(),
             font_weight: FontWeight::default(),
             font_style: FontStyle::default(),
+            letter_spacing: LetterSpacing(0.),
             background_color: None,
             underline: None,
             strikethrough: None,
@@ -424,6 +428,9 @@ impl TextStyle {
         }
         if let Some(style) = style.font_style {
             self.font_style = style;
+        }
+        if let Some(letter_spacing) = style.letter_spacing {
+            self.letter_spacing = letter_spacing;
         }
 
         if let Some(color) = style.color {
@@ -476,6 +483,7 @@ impl TextStyle {
                 weight: self.font_weight,
                 style: self.font_style,
             },
+            letter_spacing: self.letter_spacing,
             color: self.color,
             background_color: self.background_color,
             underline: self.underline,
@@ -497,6 +505,9 @@ pub struct HighlightStyle {
     /// The font style, e.g. italic
     pub font_style: Option<FontStyle>,
 
+    /// The letter spacing of the text
+    pub letter_spacing: Option<LetterSpacing>,
+
     /// The background color of the text
     pub background_color: Option<Hsla>,
 
@@ -517,6 +528,7 @@ impl Hash for HighlightStyle {
         self.color.hash(state);
         self.font_weight.hash(state);
         self.font_style.hash(state);
+        self.letter_spacing.hash(state);
         self.background_color.hash(state);
         self.underline.hash(state);
         self.strikethrough.hash(state);
@@ -851,6 +863,7 @@ impl From<&TextStyle> for HighlightStyle {
             color: Some(other.color),
             font_weight: Some(other.font_weight),
             font_style: Some(other.font_style),
+            letter_spacing: Some(other.letter_spacing),
             background_color: other.background_color,
             underline: other.underline,
             strikethrough: other.strikethrough,

@@ -265,14 +265,28 @@ impl TextSystem {
     }
 
     /// Returns a handle to a line wrapper, for the given font and font size.
-    pub fn line_wrapper(self: &Arc<Self>, font: Font, font_size: Pixels) -> LineWrapperHandle {
+    pub fn line_wrapper(
+        self: &Arc<Self>,
+        font: Font,
+        font_size: Pixels,
+        letter_spacing: LetterSpacing,
+    ) -> LineWrapperHandle {
         let lock = &mut self.wrapper_pool.lock();
         let font_id = self.resolve_font(&font);
         let wrappers = lock
-            .entry(FontIdWithSize { font_id, font_size })
+            .entry(FontIdWithSize {
+                font_id,
+                font_size,
+                letter_spacing,
+            })
             .or_default();
         let wrapper = wrappers.pop().unwrap_or_else(|| {
-            LineWrapper::new(font_id, font_size, self.platform_text_system.clone())
+            LineWrapper::new(
+                font_id,
+                font_size,
+                letter_spacing,
+                self.platform_text_system.clone(),
+            )
         });
 
         LineWrapperHandle {
@@ -387,7 +401,6 @@ impl WindowTextSystem {
         &self,
         text: SharedString,
         font_size: Pixels,
-        tracking: Pixels,
         runs: &[TextRun],
         wrap_width: Option<Pixels>,
         line_clamp: Option<usize>,
@@ -420,6 +433,7 @@ impl WindowTextSystem {
                     font_runs.push(FontRun {
                         len: run_len_within_line,
                         font_id: self.resolve_font(&run.font),
+                        letter_spacing: todo!(),
                     });
                 }
 
@@ -452,7 +466,6 @@ impl WindowTextSystem {
             let layout = self.line_layout_cache.layout_wrapped_line(
                 &line_text,
                 font_size,
-                tracking,
                 &font_runs,
                 wrap_width,
                 Some(max_wrap_lines - wrapped_lines),
@@ -523,7 +536,7 @@ impl WindowTextSystem {
         for run in runs.iter() {
             let font_id = self.resolve_font(&run.font);
             if let Some(last_run) = font_runs.last_mut() {
-                if last_run.font_id == font_id {
+                if last_run.font_id == font_id && last_run.letter_spacing == run.letter_spacing {
                     last_run.len += run.len;
                     continue;
                 }
@@ -531,6 +544,7 @@ impl WindowTextSystem {
             font_runs.push(FontRun {
                 len: run.len,
                 font_id,
+                letter_spacing: run.letter_spacing,
             });
         }
 
@@ -549,6 +563,7 @@ impl WindowTextSystem {
 struct FontIdWithSize {
     font_id: FontId,
     font_size: Pixels,
+    letter_spacing: LetterSpacing,
 }
 
 /// A handle into the text system, which can be used to compute the wrapped layout of text
@@ -565,6 +580,7 @@ impl Drop for LineWrapperHandle {
             .get_mut(&FontIdWithSize {
                 font_id: wrapper.font_id,
                 font_size: wrapper.font_size,
+                letter_spacing: wrapper.letter_spacing,
             })
             .unwrap()
             .push(wrapper);
@@ -657,6 +673,31 @@ impl Display for FontStyle {
     }
 }
 
+#[derive(
+    Clone, Copy, Default, Debug, PartialEq, PartialOrd, Deserialize, Serialize, JsonSchema,
+)]
+pub struct LetterSpacing(pub f32);
+
+impl Hash for LetterSpacing {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u32(u32::from_be_bytes(self.0.to_be_bytes()));
+    }
+}
+
+impl Eq for LetterSpacing {}
+
+impl Display for LetterSpacing {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        Debug::fmt(self, f)
+    }
+}
+
+impl LetterSpacing {
+    pub fn to_px(&self, font_size: Pixels) -> Pixels {
+        self.0 * font_size
+    }
+}
+
 /// A styled run of text, for use in [`TextLayout`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TextRun {
@@ -672,6 +713,8 @@ pub struct TextRun {
     pub underline: Option<UnderlineStyle>,
     /// The strikethrough style (if any)
     pub strikethrough: Option<StrikethroughStyle>,
+    /// The letter spacing
+    pub letter_spacing: LetterSpacing,
 }
 
 #[cfg(all(target_os = "macos", test))]
