@@ -1013,8 +1013,9 @@ impl DisplaySnapshot {
         }
 
         let font_size = editor_style.text.font_size.to_pixels(*rem_size);
+        let tracking = editor_style.text.tracking.to_pixels(*rem_size);
         text_system
-            .layout_line(&line, font_size, &runs)
+            .layout_line(&line, font_size, tracking, &runs)
             .expect("we expect the font to be loaded because it's rendered by the editor")
     }
 

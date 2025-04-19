@@ -342,6 +342,7 @@ impl WindowTextSystem {
         &self,
         text: SharedString,
         font_size: Pixels,
+        tracking: Pixels,
         runs: &[TextRun],
     ) -> Result<ShapedLine> {
         debug_assert!(
@@ -370,7 +371,7 @@ impl WindowTextSystem {
             });
         }
 
-        let layout = self.layout_line(&text, font_size, runs)?;
+        let layout = self.layout_line(&text, font_size, tracking, runs)?;
 
         Ok(ShapedLine {
             layout,
@@ -386,6 +387,7 @@ impl WindowTextSystem {
         &self,
         text: SharedString,
         font_size: Pixels,
+        tracking: Pixels,
         runs: &[TextRun],
         wrap_width: Option<Pixels>,
         line_clamp: Option<usize>,
@@ -450,6 +452,7 @@ impl WindowTextSystem {
             let layout = self.line_layout_cache.layout_wrapped_line(
                 &line_text,
                 font_size,
+                tracking,
                 &font_runs,
                 wrap_width,
                 Some(max_wrap_lines - wrapped_lines),
@@ -509,6 +512,7 @@ impl WindowTextSystem {
         &self,
         text: Text,
         font_size: Pixels,
+        tracking: Pixels,
         runs: &[TextRun],
     ) -> Result<Arc<LineLayout>>
     where
@@ -532,7 +536,7 @@ impl WindowTextSystem {
 
         let layout = self
             .line_layout_cache
-            .layout_line(text, font_size, &font_runs);
+            .layout_line(text, font_size, tracking, &font_runs);
 
         font_runs.clear();
         self.font_runs_pool.lock().push(font_runs);

@@ -512,7 +512,13 @@ pub(crate) trait PlatformTextSystem: Send + Sync {
         params: &RenderGlyphParams,
         raster_bounds: Bounds<DevicePixels>,
     ) -> Result<(Size<DevicePixels>, Vec<u8>)>;
-    fn layout_line(&self, text: &str, font_size: Pixels, runs: &[FontRun]) -> LineLayout;
+    fn layout_line(
+        &self,
+        text: &str,
+        font_size: Pixels,
+        tracking: Pixels,
+        font_runs: &[FontRun],
+    ) -> LineLayout;
 }
 
 pub(crate) struct NoopTextSystem;
@@ -587,7 +593,13 @@ impl PlatformTextSystem for NoopTextSystem {
         Ok((raster_bounds.size, Vec::new()))
     }
 
-    fn layout_line(&self, text: &str, font_size: Pixels, _runs: &[FontRun]) -> LineLayout {
+    fn layout_line(
+        &self,
+        text: &str,
+        font_size: Pixels,
+        tracking: Pixels,
+        _runs: &[FontRun],
+    ) -> LineLayout {
         let mut position = px(0.);
         let metrics = self.font_metrics(FontId(0));
         let em_width = font_size
@@ -613,6 +625,7 @@ impl PlatformTextSystem for NoopTextSystem {
             } else {
                 position += em_width
             }
+            position += tracking;
         }
         let mut runs = Vec::default();
         if glyphs.len() > 0 {

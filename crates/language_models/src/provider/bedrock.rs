@@ -1130,6 +1130,7 @@ impl ConfigurationView {
             font_features: settings.ui_font.features.clone(),
             font_fallbacks: settings.ui_font.fallbacks.clone(),
             font_size: rems(0.875).into(),
+            tracking: AbsoluteLength::default(),
             font_weight: settings.ui_font.weight,
             font_style: FontStyle::Normal,
             line_height: relative(1.3),

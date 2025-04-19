@@ -1323,6 +1323,7 @@ impl EditorElement {
                                     .shape_line(
                                         text,
                                         cursor_row_layout.font_size,
+                                        cursor_row_layout.tracking,
                                         &[TextRun {
                                             len,
                                             font,
@@ -2542,6 +2543,7 @@ impl EditorElement {
         // Show the placeholder when the editor is empty
         if snapshot.is_empty() {
             let font_size = style.text.font_size.to_pixels(window.rem_size());
+            let tracking = style.text.tracking.to_pixels(window.rem_size());
             let placeholder_color = cx.theme().colors().text_placeholder;
             let placeholder_text = snapshot.placeholder_text();
 
@@ -2564,7 +2566,7 @@ impl EditorElement {
                     };
                     window
                         .text_system()
-                        .shape_line(line.to_string().into(), font_size, &[run])
+                        .shape_line(line.to_string().into(), font_size, tracking, &[run])
                         .log_err()
                 })
                 .map(|line| LineWithInvisibles {
@@ -2573,6 +2575,7 @@ impl EditorElement {
                     fragments: smallvec![LineFragment::Text(line)],
                     invisibles: Vec::new(),
                     font_size,
+                    tracking,
                 })
                 .collect()
         } else {
@@ -5649,11 +5652,13 @@ impl EditorElement {
     fn column_pixels(&self, column: usize, window: &mut Window, _: &mut App) -> Pixels {
         let style = &self.style;
         let font_size = style.text.font_size.to_pixels(window.rem_size());
+        let tracking = style.text.tracking.to_pixels(window.rem_size());
         let layout = window
             .text_system()
             .shape_line(
                 SharedString::from(" ".repeat(column)),
                 font_size,
+                tracking,
                 &[TextRun {
                     len: column,
                     font: style.text.font(),
@@ -5695,6 +5700,7 @@ impl EditorElement {
         window.text_system().shape_line(
             text,
             self.style.text.font_size.to_pixels(window.rem_size()),
+            self.style.text.tracking.to_pixels(window.rem_size()),
             &[run],
         )
     }
@@ -5892,6 +5898,7 @@ pub(crate) struct LineWithInvisibles {
     len: usize,
     pub(crate) width: Pixels,
     font_size: Pixels,
+    tracking: Pixels,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -5942,6 +5949,7 @@ impl LineWithInvisibles {
         let mut row = 0;
         let mut line_exceeded_max_len = false;
         let font_size = text_style.font_size.to_pixels(window.rem_size());
+        let tracking = text_style.tracking.to_pixels(window.rem_size());
 
         let ellipsis = SharedString::from("⋯");
 
@@ -5955,7 +5963,7 @@ impl LineWithInvisibles {
                 if !line.is_empty() {
                     let shaped_line = window
                         .text_system()
-                        .shape_line(line.clone().into(), font_size, &styles)
+                        .shape_line(line.clone().into(), font_size, tracking, &styles)
                         .unwrap();
                     width += shaped_line.width;
                     len += shaped_line.len;
@@ -5977,6 +5985,7 @@ impl LineWithInvisibles {
                                 .shape_line(
                                     chunk,
                                     font_size,
+                                    tracking,
                                     &[text_style.to_run(highlighted_chunk.text.len())],
                                 )
                                 .unwrap();
@@ -6023,7 +6032,7 @@ impl LineWithInvisibles {
                         };
                         let line_layout = window
                             .text_system()
-                            .shape_line(x, font_size, &[run])
+                            .shape_line(x, font_size, tracking, &[run])
                             .unwrap()
                             .with_len(highlighted_chunk.text.len());
 
@@ -6037,7 +6046,7 @@ impl LineWithInvisibles {
                     if ix > 0 {
                         let shaped_line = window
                             .text_system()
-                            .shape_line(line.clone().into(), font_size, &styles)
+                            .shape_line(line.clone().into(), font_size, tracking, &styles)
                             .unwrap();
                         width += shaped_line.width;
                         len += shaped_line.len;
@@ -6048,6 +6057,7 @@ impl LineWithInvisibles {
                             fragments: mem::take(&mut fragments),
                             invisibles: std::mem::take(&mut invisibles),
                             font_size,
+                            tracking,
                         });
 
                         line.clear();
@@ -6604,6 +6614,7 @@ impl Element for EditorElement {
 
                     let font_id = window.text_system().resolve_font(&style.text.font());
                     let font_size = style.text.font_size.to_pixels(window.rem_size());
+                    let tracking = style.text.tracking.to_pixels(window.rem_size());
                     let line_height = style.text.line_height_in_pixels(window.rem_size());
                     let em_width = window.text_system().em_width(font_id, font_size).unwrap();
                     let em_advance = window.text_system().em_advance(font_id, font_size).unwrap();
@@ -7490,6 +7501,7 @@ impl Element for EditorElement {
                         .shape_line(
                             "→".into(),
                             invisible_symbol_font_size,
+                            tracking,
                             &[TextRun {
                                 len: "→".len(),
                                 font: self.style.text.font(),
@@ -7505,6 +7517,7 @@ impl Element for EditorElement {
                         .shape_line(
                             "•".into(),
                             invisible_symbol_font_size,
+                            tracking,
                             &[TextRun {
                                 len: "•".len(),
                                 font: self.style.text.font(),
@@ -7622,6 +7635,7 @@ impl Element for EditorElement {
 
         let text_style = TextStyleRefinement {
             font_size: Some(self.style.text.font_size),
+            tracking: Some(self.style.text.tracking),
             line_height: Some(self.style.text.line_height),
             ..Default::default()
         };

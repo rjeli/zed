@@ -287,6 +287,7 @@ impl TerminalElement {
                             .shape_line(
                                 cell_text.into(),
                                 text_style.font_size.to_pixels(window.rem_size()),
+                                text_style.tracking.to_pixels(window.rem_size()),
                                 &[cell_style],
                             )
                             .unwrap();
@@ -786,6 +787,7 @@ impl Element for TerminalElement {
                             .shape_line(
                                 str_trxt.into(),
                                 text_style.font_size.to_pixels(window.rem_size()),
+                                text_style.tracking.to_pixels(window.rem_size()),
                                 &[TextRun {
                                     len,
                                     font: text_style.font(),

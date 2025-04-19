@@ -82,23 +82,28 @@ pub fn panel_editor_style(monospace: bool, window: &Window, cx: &App) -> EditorS
 
     let font_size = TextSize::Small.rems(cx).to_pixels(window.rem_size());
 
-    let (font_family, font_fallbacks, font_features, font_weight, line_height) = if monospace {
-        (
-            settings.buffer_font.family.clone(),
-            settings.buffer_font.fallbacks.clone(),
-            settings.buffer_font.features.clone(),
-            settings.buffer_font.weight,
-            font_size * settings.buffer_line_height.value(),
-        )
-    } else {
-        (
-            settings.ui_font.family.clone(),
-            settings.ui_font.fallbacks.clone(),
-            settings.ui_font.features.clone(),
-            settings.ui_font.weight,
-            window.line_height(),
-        )
-    };
+    dbg!(settings.buffer_tracking);
+
+    let (font_family, font_fallbacks, font_features, font_weight, tracking, line_height) =
+        if monospace {
+            (
+                settings.buffer_font.family.clone(),
+                settings.buffer_font.fallbacks.clone(),
+                settings.buffer_font.features.clone(),
+                settings.buffer_font.weight,
+                settings.buffer_tracking,
+                font_size * settings.buffer_line_height.value(),
+            )
+        } else {
+            (
+                settings.ui_font.family.clone(),
+                settings.ui_font.fallbacks.clone(),
+                settings.ui_font.features.clone(),
+                settings.ui_font.weight,
+                px(0.0),
+                window.line_height(),
+            )
+        };
 
     EditorStyle {
         background: cx.theme().colors().editor_background,
@@ -109,6 +114,7 @@ pub fn panel_editor_style(monospace: bool, window: &Window, cx: &App) -> EditorS
             font_fallbacks,
             font_features,
             font_size: TextSize::Small.rems(cx).into(),
+            tracking: tracking.into(),
             font_weight,
             line_height: line_height.into(),
             ..Default::default()

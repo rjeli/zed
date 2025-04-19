@@ -11,7 +11,7 @@ use core_foundation::{
     attributed_string::CFMutableAttributedString,
     base::{CFRange, TCFType},
     number::CFNumber,
-    string::CFString,
+    string::{CFString, CFStringRef},
 };
 use core_graphics::{
     base::{CGGlyph, kCGImageAlphaPremultipliedLast},
@@ -49,6 +49,10 @@ use super::open_type::apply_features_and_fallbacks;
 
 #[allow(non_upper_case_globals)]
 const kCGImageAlphaOnly: u32 = 7;
+
+unsafe extern "C" {
+    pub static kCTTrackingAttributeName: CFStringRef;
+}
 
 pub(crate) struct MacTextSystem(RwLock<MacTextSystemState>);
 
@@ -179,8 +183,16 @@ impl PlatformTextSystem for MacTextSystem {
         self.0.read().rasterize_glyph(glyph_id, raster_bounds)
     }
 
-    fn layout_line(&self, text: &str, font_size: Pixels, font_runs: &[FontRun]) -> LineLayout {
-        self.0.write().layout_line(text, font_size, font_runs)
+    fn layout_line(
+        &self,
+        text: &str,
+        font_size: Pixels,
+        tracking: Pixels,
+        font_runs: &[FontRun],
+    ) -> LineLayout {
+        self.0
+            .write()
+            .layout_line(text, font_size, tracking, font_runs)
     }
 }
 
@@ -427,12 +439,24 @@ impl MacTextSystemState {
         }
     }
 
-    fn layout_line(&mut self, text: &str, font_size: Pixels, font_runs: &[FontRun]) -> LineLayout {
+    fn layout_line(
+        &mut self,
+        text: &str,
+        font_size: Pixels,
+        tracking: Pixels,
+        font_runs: &[FontRun],
+    ) -> LineLayout {
         // Construct the attributed string, converting UTF8 ranges to UTF16 ranges.
         let mut string = CFMutableAttributedString::new();
         {
             string.replace_str(&CFString::new(text), CFRange::init(0, 0));
             let utf16_line_len = string.char_len() as usize;
+
+            let entire_range = CFRange::init(0, utf16_line_len as isize);
+            let tracking = CFNumber::from(tracking.to_f64());
+            unsafe {
+                string.set_attribute(entire_range, kCTTrackingAttributeName, &tracking);
+            }
 
             let mut ix_converter = StringIndexConverter::new(text);
             for run in font_runs {
@@ -495,6 +519,7 @@ impl MacTextSystemState {
                 ix_converter.advance_to_utf16_ix(glyph_utf16_ix);
                 glyphs.push(ShapedGlyph {
                     id: GlyphId(*glyph_id as u32),
+                    // rjeli: modify here
                     position: point(position.x as f32, position.y as f32).map(px),
                     index: ix_converter.utf8_ix,
                     is_emoji: self.is_emoji(font_id),
@@ -686,13 +711,13 @@ mod tests {
             len: line.len(),
         };
 
-        let layout = fonts.layout_line(line, px(16.), &[style]);
+        let layout = fonts.layout_line(line, px(16.), px(0.), &[style]);
         assert_eq!(layout.len, line.len());
         assert!(layout.runs.is_empty());
 
         let line = "a\u{feff}b";
         style.len = line.len();
-        let layout = fonts.layout_line(line, px(16.), &[style]);
+        let layout = fonts.layout_line(line, px(16.), px(0.), &[style]);
         assert_eq!(layout.len, line.len());
         assert_eq!(layout.runs.len(), 1);
         assert_eq!(layout.runs[0].glyphs.len(), 2);

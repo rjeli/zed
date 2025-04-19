@@ -217,6 +217,7 @@ impl LineWrapper {
             .layout_line(
                 buffer,
                 self.font_size,
+                /* TODO */ px(0.),
                 &[FontRun {
                     len: buffer.len(),
                     font_id: self.font_id,
@@ -711,6 +712,7 @@ mod tests {
                 .shape_text(
                     text,
                     px(16.),
+                    px(0.),
                     &[
                         normal.with_len(4),
                         bold.with_len(5),

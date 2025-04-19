@@ -632,6 +632,14 @@ pub trait Styled: Sized {
         self
     }
 
+    /// Sets the tracking of this element and its children.
+    fn tracking(mut self, tracking: impl Into<AbsoluteLength>) -> Self {
+        self.text_style()
+            .get_or_insert_with(Default::default)
+            .tracking = Some(tracking.into());
+        self
+    }
+
     /// Sets the opacity of this element and its children.
     fn opacity(mut self, opacity: f32) -> Self {
         self.style().opacity = Some(opacity);

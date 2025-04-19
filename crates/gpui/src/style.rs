@@ -351,6 +351,9 @@ pub struct TextStyle {
     /// The font size to use, in pixels or rems.
     pub font_size: AbsoluteLength,
 
+    /// The tracking to use, in pixels or rems.
+    pub tracking: AbsoluteLength,
+
     /// The line height to use, in pixels or fractions
     pub line_height: DefiniteLength,
 
@@ -397,6 +400,7 @@ impl Default for TextStyle {
             font_features: FontFeatures::default(),
             font_fallbacks: None,
             font_size: rems(1.).into(),
+            tracking: AbsoluteLength::default(),
             line_height: phi(),
             font_weight: FontWeight::default(),
             font_style: FontStyle::default(),

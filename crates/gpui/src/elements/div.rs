@@ -1682,6 +1682,7 @@ impl Interactivity {
                     .shape_text(
                         element_id.into(),
                         FONT_SIZE,
+                        px(0.0),
                         &[window.text_style().to_run(str_len)],
                         None,
                         None,

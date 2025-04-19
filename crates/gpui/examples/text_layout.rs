@@ -71,6 +71,8 @@ impl Render for HelloWorld {
                             .child("100%"),
                     ),
             )
+            .child(div().tracking(px(1.0)).child("I have positive tracking"))
+            .child(div().tracking(px(-1.0)).child("I have negative tracking"))
     }
 }
 

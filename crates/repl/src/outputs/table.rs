@@ -95,6 +95,7 @@ impl TableView {
         let text_style = window.text_style();
         let text_font = ThemeSettings::get_global(cx).buffer_font.clone();
         let font_size = ThemeSettings::get_global(cx).buffer_font_size(cx);
+        let tracking = ThemeSettings::get_global(cx).buffer_tracking;
         let mut runs = [TextRun {
             len: 0,
             font: text_font,
@@ -107,7 +108,7 @@ impl TableView {
         for field in table.schema.fields.iter() {
             runs[0].len = field.name.len();
             let mut width = text_system
-                .layout_line(&field.name, font_size, &runs)
+                .layout_line(&field.name, font_size, tracking, &runs)
                 .map(|layout| layout.width)
                 .unwrap_or(px(0.));
 
@@ -121,7 +122,7 @@ impl TableView {
                 runs[0].len = content.len();
                 let cell_width = window
                     .text_system()
-                    .layout_line(&content, font_size, &runs)
+                    .layout_line(&content, font_size, tracking, &runs)
                     .map(|layout| layout.width)
                     .unwrap_or(px(0.));
 

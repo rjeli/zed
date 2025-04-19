@@ -102,6 +102,8 @@ pub struct ThemeSettings {
     ///
     /// The terminal font size can be overridden using it's own setting.
     buffer_font_size: Pixels,
+    /// The font tracking used for buffers, and the terminal.
+    pub buffer_tracking: Pixels,
     /// The font used for buffers, and the terminal.
     ///
     /// The terminal font family can be overridden using it's own setting.
@@ -399,6 +401,9 @@ pub struct ThemeSettingsContent {
     /// The default font size for rendering in text buffers.
     #[serde(default)]
     pub buffer_font_size: Option<f32>,
+    /// The default font tracking for rendering in text buffers.
+    #[serde(default)]
+    pub buffer_tracking: Option<f32>,
     /// The weight of the editor font in CSS units from 100 to 900.
     #[serde(default)]
     pub buffer_font_weight: Option<f32>,
@@ -788,6 +793,7 @@ impl settings::Settings for ThemeSettings {
                 style: FontStyle::default(),
             },
             buffer_font_size: defaults.buffer_font_size.unwrap().into(),
+            buffer_tracking: defaults.buffer_tracking.unwrap().into(),
             buffer_line_height: defaults.buffer_line_height.unwrap(),
             theme_selection: defaults.theme.clone(),
             active_theme: themes
@@ -891,6 +897,10 @@ impl settings::Settings for ThemeSettings {
             );
             this.buffer_font_size = this.buffer_font_size.clamp(px(6.), px(100.));
 
+            merge(
+                &mut this.buffer_tracking,
+                value.buffer_tracking.map(Into::into),
+            );
             merge(&mut this.buffer_line_height, value.buffer_line_height);
 
             // Clamp the `unnecessary_code_fade` to ensure text can't disappear entirely.
